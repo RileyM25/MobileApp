@@ -1,45 +1,49 @@
-<ion-content [fullscreen]="false">
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>{{ studentId }}</ion-title>
-  
-      <ion-buttons slot="end">
-        <ion-button (click)="goToFavourites()" aria-label="Favourites">
-          <ion-icon name="heart"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-  
-  <ion-content class="ion-padding">
-    <ion-item lines="none">
-      <ion-input
-        [(ngModel)]="searchQuery"
-        placeholder="Search movies"
-      ></ion-input>
-      <ion-button (click)="onSearch()">Search</ion-button>
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ studentId }}</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="goToFavourites()" aria-label="Favourites">
+        <ion-icon name="heart"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item lines="none">
+    <ion-input
+      [(ngModel)]="searchQuery"
+      placeholder="Search movies"
+    ></ion-input>
+    <ion-button (click)="onSearch()">Search</ion-button>
+  </ion-item>
+
+  <h2 class="ion-margin-top" *ngIf="!searchQuery.trim()">
+    Today&apos;s Trending Movies
+  </h2>
+
+  <ion-list *ngIf="!isLoading">
+    <ion-item button *ngFor="let m of movies" (click)="openMovie(m.id)">
+      <ion-thumbnail slot="start">
+        <img
+          *ngIf="posterUrl(m.poster_path)"
+          [src]="posterUrl(m.poster_path)"
+        />
+      </ion-thumbnail>
+
+      <ion-label>
+        <h3>Movie ID: {{ m.id }}</h3>
+        <p>{{ m.overview }}</p>
+      </ion-label>
     </ion-item>
-  
-    <h2 class="ion-margin-top" *ngIf="!searchQuery.trim()">
-      Today&apos;s Trending Movies
-    </h2>
-  
-    <ion-list *ngIf="!isLoading">
-      <ion-item button *ngFor="let m of movies" (click)="openMovie(m.id)">
-        <ion-thumbnail slot="start">
-          <img *ngIf="posterUrl(m.poster_path)" [src]="posterUrl(m.poster_path)" />
-        </ion-thumbnail>
-  
-        <ion-label>
-          <h3>Movie ID: {{ m.id }}</h3>
-          <p>{{ m.overview }}</p>
-        </ion-label>
-      </ion-item>
-    </ion-list>
-  
-    <div class="ion-margin-top" *ngIf="isLoading">
-      <ion-spinner name="crescent"></ion-spinner>
-    </div>
-  
-    <p class="ion-text-center ion-margin-top" *ngIf="errorMsg">{{ errorMsg }}</p>
-  </ion-content>
+  </ion-list>
+
+  <div class="ion-margin-top" *ngIf="isLoading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <p class="ion-text-center ion-margin-top" *ngIf="errorMsg">
+    {{ errorMsg }}
+  </p>
+</ion-content>

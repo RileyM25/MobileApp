@@ -4,8 +4,8 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonIcon, IonItem, IonLabel, IonList, IonThumbnail, IonInput, IonSpinner} from '@ionic/angular/standalone';
-import { TmdbService } from '../../services/tmdb.service';
-import { MovieDisplay } from '../../models/movie-display.model';
+import { TmdbService } from '../services/tmdb';
+import { MovieDisplay } from '../models/movie-display.model';
 
 @Component({
   selector: 'app-home',
