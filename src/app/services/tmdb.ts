@@ -34,7 +34,7 @@ export interface PersonMovieCredit {
 @Injectable({ providedIn: 'root' })
 export class TmdbService {
   private baseUrl = 'https://api.themoviedb.org/3';
-  private apiKey = ''; // TODO: put your key here for now, or use environment.local.ts later
+  private apiKey = '7a76837473ba329059bb3a5264ff09e1'; 
 
   constructor(private http: HttpClient) {}
 
@@ -48,6 +48,7 @@ export class TmdbService {
 
     return (data?.results ?? []).map((m: any) => ({
       id: m.id,
+      title: m.title ?? '',
       overview: m.overview ?? '',
       poster_path: m.poster_path ?? null,
     }));
@@ -59,6 +60,7 @@ export class TmdbService {
 
     return (data?.results ?? []).map((m: any) => ({
       id: m.id,
+      title: m.title ?? '',
       overview: m.overview ?? '',
       poster_path: m.poster_path ?? null,
     }));
