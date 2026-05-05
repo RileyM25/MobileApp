@@ -17,6 +17,18 @@
       placeholder="Search movies"
     ></ion-input>
     <ion-button (click)="onSearch()">Search</ion-button>
+    <div *ngIf="recentSearches.length > 0 && !searchQuery.trim()" class="ion-margin-top">
+      <h3>Recent Searches</h3>
+      <ion-buttons>
+        <ion-button
+          *ngFor="let q of recentSearches"
+          size="small"
+          (click)="useSearchSuggestion(q)"
+        >
+          {{ q }}
+        </ion-button>
+      </ion-buttons>
+    </div>
   </ion-item>
 
   <h2 class="ion-margin-top" *ngIf="!searchQuery.trim()">

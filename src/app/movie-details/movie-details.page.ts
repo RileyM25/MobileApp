@@ -95,4 +95,5 @@ export class MovieDetailsPage {
   goFavourites() {
     this.router.navigate(['/favourites']);
   }
+
 }
