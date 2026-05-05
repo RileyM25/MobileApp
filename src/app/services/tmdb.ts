@@ -11,10 +11,12 @@ export interface CastCrewMember {
   character?: string; // cast
   job?: string; // crew
 }
+
 export interface MovieCredits {
   cast: CastCrewMember[];
   crew: CastCrewMember[];
 }
+
 export interface PersonDetails {
   id: number;
   name: string;
@@ -25,8 +27,16 @@ export interface PersonDetails {
   place_of_birth: string | null;
   biography: string | null;
 }
+
 export interface PersonMovieCredit {
   id: number;
+  title: string;
+  poster_path: string | null;
+}
+
+export interface MovieOverview {
+  id: number;
+  overview: string;
   title: string;
   poster_path: string | null;
 }
@@ -34,7 +44,7 @@ export interface PersonMovieCredit {
 @Injectable({ providedIn: 'root' })
 export class TmdbService {
   private baseUrl = 'https://api.themoviedb.org/3';
-  private apiKey = '7a76837473ba329059bb3a5264ff09e1'; 
+  private apiKey = '7a76837473ba329059bb3a5264ff09e1';
 
   constructor(private http: HttpClient) {}
 
@@ -42,6 +52,7 @@ export class TmdbService {
     return await lastValueFrom(this.http.get<T>(url));
   }
 
+  // Home: Trending (id/title/overview/poster_path) [brief required fields]
   async getTrendingToday(): Promise<MovieDisplay[]> {
     const url = `${this.baseUrl}/trending/movie/day?api_key=${this.apiKey}`;
     const data: any = await this.getJson<any>(url);
@@ -54,6 +65,7 @@ export class TmdbService {
     }));
   }
 
+  // Home: Search (same fields)
   async searchMovies(query: string): Promise<MovieDisplay[]> {
     const url = `${this.baseUrl}/search/movie?query=${encodeURIComponent(query)}&api_key=${this.apiKey}`;
     const data: any = await this.getJson<any>(url);
@@ -66,6 +78,7 @@ export class TmdbService {
     }));
   }
 
+  // Movie Details: cast/crew [brief]
   async getMovieCredits(movieId: number): Promise<MovieCredits> {
     const url = `${this.baseUrl}/movie/${movieId}/credits?api_key=${this.apiKey}`;
     const data: any = await this.getJson<any>(url);
@@ -86,6 +99,32 @@ export class TmdbService {
     };
   }
 
+  // Movie Details: overview for the movie details page
+  async getMovieOverview(movieId: number): Promise<MovieOverview> {
+    const url = `${this.baseUrl}/movie/${movieId}?api_key=${this.apiKey}`;
+    const data: any = await this.getJson<any>(url);
+
+    return {
+      id: data.id,
+      overview: data.overview ?? '',
+      title: data.title ?? '',
+      poster_path: data.poster_path ?? null,
+    };
+  }
+
+  // Favourites (Option A): store display data needed in favourites list
+  async getMovieDisplayForFavourite(movieId: number): Promise<MovieDisplay | null> {
+    const overview = await this.getMovieOverview(movieId);
+
+    return {
+      id: overview.id,
+      title: overview.title,
+      overview: overview.overview,
+      poster_path: overview.poster_path,
+    };
+  }
+
+  // Person Details [brief]
   async getPersonDetails(personId: number): Promise<PersonDetails> {
     const url = `${this.baseUrl}/person/${personId}?api_key=${this.apiKey}`;
     const p: any = await this.getJson<any>(url);
@@ -102,13 +141,14 @@ export class TmdbService {
     };
   }
 
+  // Person: other movies [brief]
   async getPersonMovieCredits(personId: number): Promise<PersonMovieCredit[]> {
     const url = `${this.baseUrl}/person/${personId}/movie_credits?api_key=${this.apiKey}`;
     const data: any = await this.getJson<any>(url);
 
     return (data?.cast ?? []).map((m: any) => ({
       id: m.id,
-      title: m.title,
+      title: m.title ?? '',
       poster_path: m.poster_path ?? null,
     }));
   }

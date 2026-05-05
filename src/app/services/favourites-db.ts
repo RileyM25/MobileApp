@@ -10,7 +10,7 @@ interface FavDB extends DBSchema {
 }
 
 @Injectable({ providedIn: 'root' })
-export class FavoritesDbService {
+export class FavoritesDb {
   private dbPromise = openDB<FavDB>('movie-app-favorites', 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('movies')) {

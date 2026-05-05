@@ -1,20 +1,98 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
+
+import {
+  IonHeader, IonToolbar, IonTitle, IonContent,
+  IonButtons, IonButton, IonIcon,
+  IonItem, IonLabel, IonList, IonThumbnail,
+  IonSpinner
+} from '@ionic/angular/standalone';
+
+import { TmdbService, CastCrewMember } from '../services/tmdb';
+import { FavoritesDb } from '../services/favourites-db';
 
 @Component({
   selector: 'app-movie-details',
   templateUrl: './movie-details.page.html',
   styleUrls: ['./movie-details.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonHeader, IonToolbar, IonTitle, IonContent,
+    IonButtons, IonButton, IonIcon,
+    IonItem, IonLabel, IonList, IonThumbnail,
+    IonSpinner
+  ],
 })
-export class MovieDetailsPage implements OnInit {
+export class MovieDetailsPage {
+  movieId!: number;
 
-  constructor() { }
+  overview = '';
+  cast: CastCrewMember[] = [];
+  crew: CastCrewMember[] = [];
 
-  ngOnInit() {
+  isFavourite = false;
+  isLoading = false;
+  errorMsg = '';
+
+  constructor(
+    private route: ActivatedRoute,
+    private favouritesDb: FavoritesDb,
+    public tmdb: TmdbService,
+    private router: Router
+  ) {}
+
+  async ionViewWillEnter() {
+    this.errorMsg = '';
+    this.isLoading = true;
+
+    const idParam = this.route.snapshot.paramMap.get('movieId');
+    this.movieId = Number(idParam);
+
+    try {
+      // credits gives cast/crew [1]
+      const credits = await this.tmdb.getMovieCredits(this.movieId);
+      this.cast = credits.cast;
+      this.crew = credits.crew;
+
+      // overview: simplest is to keep it from a movie endpoint (we’ll add below)
+      const overview = await this.tmdb.getMovieOverview(this.movieId);
+      this.overview = overview.overview ?? '';
+
+      // fav state
+      this.isFavourite = await this.favouritesDb.isFavourite(this.movieId);
+    } catch {
+      this.errorMsg = 'Failed to load movie details.';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
+  async toggleFavourite() {
+    const movie = await this.tmdb.getMovieDisplayForFavourite(this.movieId);
+    if (!movie) return;
+
+    if (this.isFavourite) {
+      await this.favouritesDb.removeFavourite(this.movieId);
+      this.isFavourite = false;
+    } else {
+      await this.favouritesDb.addFavourite(movie);
+      this.isFavourite = true;
+    }
+  }
+
+  openPerson(personId: number) {
+    this.router.navigate(['/person', personId]);
+  }
+
+  goHome() {
+    this.router.navigate(['/home']);
+  }
+
+  goFavourites() {
+    this.router.navigate(['/favourites']);
+  }
 }
