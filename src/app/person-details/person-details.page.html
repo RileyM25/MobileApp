@@ -1,7 +1,6 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Person Details</ion-title>
-
     <ion-buttons slot="end">
       <ion-button (click)="goFavourites()" aria-label="Favourites">
         <ion-icon name="heart"></ion-icon>
@@ -14,52 +13,77 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <p *ngIf="errorMsg" class="ion-text-center ion-margin-top">{{ errorMsg }}</p>
+  @if (errorMsg) {
+    <p class="ion-text-center ion-margin-top">{{ errorMsg }}</p>
+  }
 
-  <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+  @if (isLoading) {
+    <ion-spinner name="crescent"></ion-spinner>
+  }
 
-  <div *ngIf="!isLoading && !errorMsg && details">
-    <h2>{{ details.name }}</h2>
-
+  @if (!isLoading && !errorMsg && details) {
     <div>
-      <img
-        *ngIf="tmdb.profileUrl(details.profile_path); else noImg"
-        [src]="tmdb.profileUrl(details.profile_path)!"
-        alt="Person image"
-        style="max-width: 200px;"
-      />
-      <ng-template #noImg><p>No image</p></ng-template>
+      <h2 class="ion-margin-top">Overview</h2>
+      <p>{{ details.name }}</p>
+
+      <div>
+        @if (tmdb.profileUrl(details.profile_path)) {
+          <img
+            [src]="tmdb.profileUrl(details.profile_path)!"
+            alt="Person image"
+            style="max-width: 200px;"
+          />
+        } @else {
+          <p>No image</p>
+        }
+      </div>
+
+      @if (details.birthday) {
+        <p>DOB: {{ details.birthday }}</p>
+      }
+
+      @if (details.deathday) {
+        <p>DOD: {{ details.deathday }}</p>
+      }
+
+      @if (details.also_known_as.length) {
+        <p>
+          AKA: {{ details.also_known_as.join(', ') }}
+        </p>
+      }
+
+      @if (details.place_of_birth) {
+        <p>Place of birth: {{ details.place_of_birth }}</p>
+      }
+
+      <h3 class="ion-margin-top">Description</h3>
+
+      @if (details.biography) {
+        <p>{{ details.biography }}</p>
+      } @else {
+        <p>No biography available.</p>
+      }
+
+      <h3 class="ion-margin-top">Other Movies</h3>
+
+      <ion-list>
+        <ion-item *ngFor="let m of otherMovies">
+          <ion-thumbnail slot="start">
+            @if (tmdb.posterUrl(m.poster_path)) {
+              <img [src]="tmdb.posterUrl(m.poster_path)!" />
+            } @else {
+              <p>No image</p>
+            }
+          </ion-thumbnail>
+
+          <ion-label>
+            <div>{{ m.title }}</div>
+            <ion-button size="small" (click)="openMovie(m.id)">
+              Details
+            </ion-button>
+          </ion-label>
+        </ion-item>
+      </ion-list>
     </div>
-
-    <p *ngIf="details.birthday">DOB: {{ details.birthday }}</p>
-    <p *ngIf="details.deathday">DOD: {{ details.deathday }}</p>
-    <p *ngIf="details.also_known_as?.length">
-      AKA: {{ details.also_known_as.join(', ') }}
-    </p>
-
-    <p *ngIf="details.place_of_birth">Place of birth: {{ details.place_of_birth }}</p>
-
-    <h3 class="ion-margin-top">Description</h3>
-    <p *ngIf="details.biography">{{ details.biography }}</p>
-    <p *ngIf="!details.biography">No biography available.</p>
-
-    <h3 class="ion-margin-top">Other Movies</h3>
-    <ion-list>
-      <ion-item *ngFor="let m of otherMovies">
-        <ion-thumbnail slot="start">
-          <ng-container *ngIf="tmdb.posterUrl(m.poster_path); else noPoster">
-            <img [src]="tmdb.posterUrl(m.poster_path)!" />
-          </ng-container>
-          <ng-template #noPoster><p>No image</p></ng-template>
-        </ion-thumbnail>
-
-        <ion-label>
-          <div>{{ m.title }}</div>
-          <ion-button size="small" (click)="openMovie(m.id)">
-            Details
-          </ion-button>
-        </ion-label>
-      </ion-item>
-    </ion-list>
-  </div>
+  }
 </ion-content>

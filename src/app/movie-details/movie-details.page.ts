@@ -7,7 +7,7 @@ import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonButtons, IonButton, IonIcon,
   IonItem, IonLabel, IonList, IonThumbnail,
-  IonSpinner
+  IonSpinner,
 } from '@ionic/angular/standalone';
 
 import { TmdbService, CastCrewMember } from '../services/tmdb';
@@ -24,7 +24,7 @@ import { FavoritesDb } from '../services/favourites-db';
     IonHeader, IonToolbar, IonTitle, IonContent,
     IonButtons, IonButton, IonIcon,
     IonItem, IonLabel, IonList, IonThumbnail,
-    IonSpinner
+    IonSpinner,
   ],
 })
 export class MovieDetailsPage {
@@ -58,7 +58,7 @@ export class MovieDetailsPage {
       this.cast = credits.cast;
       this.crew = credits.crew;
 
-      // overview: simplest is to keep it from a movie endpoint (we’ll add below)
+      // overview: simplest is to keep it from a movie endpoint 
       const overview = await this.tmdb.getMovieOverview(this.movieId);
       this.overview = overview.overview ?? '';
 

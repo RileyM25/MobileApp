@@ -6,6 +6,7 @@
       <ion-button (click)="goFavourites()" aria-label="Favourites">
         <ion-icon name="heart"></ion-icon>
       </ion-button>
+
       <ion-button (click)="goHome()" aria-label="Home">
         <ion-icon name="home"></ion-icon>
       </ion-button>
@@ -18,46 +19,58 @@
     {{ isFavourite ? 'Remove From Favourites' : 'Add To Favourites' }}
   </ion-button>
 
-  <p *ngIf="errorMsg" class="ion-text-center ion-margin-top">{{ errorMsg }}</p>
+  @if (errorMsg) {
+    <p class="ion-text-center ion-margin-top">{{ errorMsg }}</p>
+  }
 
-  <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+  @if (isLoading) {
+    <ion-spinner name="crescent"></ion-spinner>
+  }
 
-  <div *ngIf="!isLoading && !errorMsg">
-    <h2 class="ion-margin-top">Overview</h2>
-    <p>{{ overview }}</p>
+  @if (!isLoading && !errorMsg) {
+    <div>
+      <h2 class="ion-margin-top">Overview</h2>
+      <p>{{ overview }}</p>
 
-    <h3 class="ion-margin-top">Cast</h3>
-    <ion-list>
-      <ion-item button *ngFor="let p of cast" (click)="openPerson(p.id)">
-        <ion-thumbnail slot="start">
-          <ng-container *ngIf="tmdb.profileUrl(p.profile_path); else noCastImg">
-            <img [src]="tmdb.profileUrl(p.profile_path)!" />
-          </ng-container>
-          <ng-template #noCastImg><p>No image</p></ng-template>
-        </ion-thumbnail>
+      <h3 class="ion-margin-top">Cast</h3>
+      <ion-list>
+        <ion-item button *ngFor="let p of cast" (click)="openPerson(p.id)">
+          <ion-thumbnail slot="start">
+            @if (tmdb.profileUrl(p.profile_path)) {
+              <img [src]="tmdb.profileUrl(p.profile_path)! " />
+            } @else {
+              <p>No image</p>
+            }
+          </ion-thumbnail>
 
-        <ion-label>
-          <div>{{ p.name }}</div>
-          <div *ngIf="p.character">Character: {{ p.character }}</div>
-        </ion-label>
-      </ion-item>
-    </ion-list>
+          <ion-label>
+            <div>{{ p.name }}</div>
+            @if (p.character) {
+              <div>Character: {{ p.character }}</div>
+            }
+          </ion-label>
+        </ion-item>
+      </ion-list>
 
-    <h3 class="ion-margin-top">Crew</h3>
-    <ion-list>
-      <ion-item button *ngFor="let p of crew" (click)="openPerson(p.id)">
-        <ion-thumbnail slot="start">
-          <ng-container *ngIf="tmdb.profileUrl(p.profile_path); else noCrewImg">
-            <img [src]="tmdb.profileUrl(p.profile_path)!" />
-          </ng-container>
-          <ng-template #noCrewImg><p>No image</p></ng-template>
-        </ion-thumbnail>
+      <h3 class="ion-margin-top">Crew</h3>
+      <ion-list>
+        <ion-item button *ngFor="let p of crew" (click)="openPerson(p.id)">
+          <ion-thumbnail slot="start">
+            @if (tmdb.profileUrl(p.profile_path)) {
+              <img [src]="tmdb.profileUrl(p.profile_path)! " />
+            } @else {
+              <p>No image</p>
+            }
+          </ion-thumbnail>
 
-        <ion-label>
-          <div>{{ p.name }}</div>
-          <div *ngIf="p.job">Job: {{ p.job }}</div>
-        </ion-label>
-      </ion-item>
-    </ion-list>
-  </div>
+          <ion-label>
+            <div>{{ p.name }}</div>
+            @if (p.job) {
+              <div>Job: {{ p.job }}</div>
+            }
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+  }
 </ion-content>
