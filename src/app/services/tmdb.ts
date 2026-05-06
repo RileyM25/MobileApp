@@ -87,7 +87,12 @@ export class TmdbService {
     const cacheKey = `search:${normalized}`;
   
     const cached = await this.appDb.getCached<MovieDisplay[]>(cacheKey);
-    if (cached) return cached;
+  
+    // ✅ IMPORTANT: even if cached, still save query to history
+    if (cached) {
+      await this.appDb.addSearchQuery(query, 10);
+      return cached;
+    }
   
     const url =
       `${this.baseUrl}/search/movie?query=${encodeURIComponent(query)}&api_key=${this.apiKey}`;
@@ -102,7 +107,7 @@ export class TmdbService {
   
     await this.appDb.setCached(cacheKey, mapped, this.TTL_MS);
   
-    // Search history: query strings only (last 10)
+    // Save query strings only (last 10)
     await this.appDb.addSearchQuery(query, 10);
   
     return mapped;

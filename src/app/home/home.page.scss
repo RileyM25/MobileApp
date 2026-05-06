@@ -25,3 +25,37 @@
 #container a {
   text-decoration: none;
 }
+.search-box {
+  position: relative;   /* anchor for absolute dropdown */
+  overflow: visible;
+}
+
+/* the dropdown must span the same width as the search bar */
+.recent-dropdown {
+  position: absolute;
+  top: 100%;            /* directly under the search box */
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+
+  margin-top: 6px;
+
+  background: var(--ion-background-color, #fff);
+  border: 1px solid var(--ion-color-light, #ddd);
+  border-radius: 8px;
+  padding: 0;
+
+  max-height: 220px;
+  overflow: auto;
+
+  /* prevent it from “shrinking” */
+  display: block;
+}
+
+/* optional: title + list spacing */
+.recent-title {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--ion-color-light, #ddd);
+}

@@ -1,5 +1,11 @@
 <ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+     <ion-button (click)="backToTrending()" aria-label="Home">
+       <ion-icon name="home"></ion-icon>
+     </ion-button>
+    </ion-buttons>
+
     <ion-title>{{ studentId }}</ion-title>
 
     <ion-buttons slot="end">
@@ -11,37 +17,48 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-item lines="none">
+  <ion-item lines="none" class="search-box">
     <ion-input
       [(ngModel)]="searchQuery"
       placeholder="Search movies"
+      (ionFocus)="onSearchBoxFocus()"
+      (ionBlur)="onSearchBoxBlur()"
+      (ionInput)="onSearchInput()"
     ></ion-input>
+  
     <ion-button (click)="onSearch()">Search</ion-button>
-    <div *ngIf="recentSearches.length > 0 && !searchQuery.trim()" class="ion-margin-top">
-      <h3>Recent Searches</h3>
-      <ion-buttons>
-        <ion-button
-          *ngFor="let q of recentSearches"
-          size="small"
+  
+    <div
+      class="recent-dropdown"
+      *ngIf="showRecentSearchDropdown &&
+        filteredRecentSearches.length > 0"
+    >
+      <div class="recent-title">Recent Searches</div>
+  
+      <ion-list>
+        <ion-item
+          button
+          *ngFor="let q of filteredRecentSearches"
           (click)="useSearchSuggestion(q)"
         >
           {{ q }}
-        </ion-button>
-      </ion-buttons>
+        </ion-item>
+      </ion-list>
     </div>
   </ion-item>
 
-  <h2 class="ion-margin-top" *ngIf="!searchQuery.trim()">
+  <h2 class="ion-margin-top" *ngIf="!showingSearchResults">
     Today&apos;s Trending Movies
+  </h2>
+  
+  <h2 class="ion-margin-top" *ngIf="showingSearchResults">
+    Movies matching: {{ lastSearchQuery }}
   </h2>
 
   <ion-list *ngIf="!isLoading">
     <ion-item button *ngFor="let m of movies" (click)="openMovie(m.id)">
       <ion-thumbnail slot="start">
-        <img
-          *ngIf="posterUrl(m.poster_path)"
-          [src]="posterUrl(m.poster_path)"
-        />
+        <img *ngIf="posterUrl(m.poster_path)" [src]="posterUrl(m.poster_path)" />
       </ion-thumbnail>
 
       <ion-label>
