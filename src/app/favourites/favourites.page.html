@@ -1,7 +1,6 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Favourites</ion-title>
-
     <ion-buttons slot="end">
       <ion-button (click)="goHome()" aria-label="Home">
         <ion-icon name="home"></ion-icon>
@@ -14,25 +13,60 @@
   <p *ngIf="errorMsg" class="ion-text-center ion-margin-top">{{ errorMsg }}</p>
   <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
 
-  <ion-list *ngIf="!isLoading && !errorMsg">
-    <ion-item *ngFor="let m of favourites">
-      <ion-thumbnail slot="start">
-        <ng-container *ngIf="tmdb.posterUrl(m.poster_path); else noPoster">
-          <img [src]="tmdb.posterUrl(m.poster_path)!" />
-        </ng-container>
-        <ng-template #noPoster><p>No image</p></ng-template>
-      </ion-thumbnail>
-
+  <ng-container *ngIf="!isLoading && !errorMsg">
+    <!-- Insights header -->
+    <ion-item lines="none">
       <ion-label>
-        <div>{{ m.title }}</div>
-        <ion-button size="small" (click)="openMovie(m.id)">
-          Details
-        </ion-button>
+        <strong>{{ favouritesCount }}</strong>
+        <div>favourites</div>
       </ion-label>
     </ion-item>
+
+    <!-- Filter -->
+    <ion-item lines="none">
+      <ion-input
+        [(ngModel)]="filterText"
+        placeholder="Filter by title"
+        (ionInput)="onFilterInput()"
+      ></ion-input>
+    </ion-item>
+
+    <!-- Sort controls -->
+    <div class="ion-margin-top">
+      <ion-button size="small" (click)="setSort('title-asc')">A-Z</ion-button>
+      <ion-button size="small" (click)="setSort('title-desc')">Z-A</ion-button>
+    </div>
+
+    <!-- Clear all -->
+    <ion-button
+      class="ion-margin-top"
+      color="danger"
+      expand="block"
+      (click)="clearFavourites()"
+      [disabled]="favouritesCount === 0"
+    >
+      Clear all favourites
+    </ion-button>
+
+    <!-- List -->
+    <ion-list *ngIf="favourites.length > 0">
+      <ion-item *ngFor="let m of favourites">
+        <ion-thumbnail slot="start">
+          <ng-container *ngIf="tmdb.posterUrl(m.poster_path); else noPoster">
+            <img [src]="tmdb.posterUrl(m.poster_path)!" />
+          </ng-container>
+          <ng-template #noPoster><p>No image</p></ng-template>
+        </ion-thumbnail>
+
+        <ion-label>
+          <div>{{ m.title }}</div>
+          <ion-button size="small" (click)="openMovie(m.id)">Details</ion-button>
+        </ion-label>
+      </ion-item>
+    </ion-list>
 
     <p *ngIf="favourites.length === 0" class="ion-text-center ion-margin-top">
       No favourites yet.
     </p>
-  </ion-list>
+  </ng-container>
 </ion-content>

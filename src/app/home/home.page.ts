@@ -88,6 +88,11 @@ export class HomePage {
     // show dropdown even when input is empty
     this.showRecentSearchDropdown = true;
     this.updateFilteredRecentSearches();
+
+    const typed = this.searchQuery.trim();
+    if(typed.length >= 2){
+      this.fetchSuggestions(typed).catch( () => (this.suggestions = []));
+    }
   }
 
   onSearchBoxBlur() {
@@ -98,6 +103,19 @@ export class HomePage {
   onSearchInput() {
     this.showRecentSearchDropdown = true;
     this.updateFilteredRecentSearches();
+  
+    const typed = this.searchQuery.trim();
+    if (typed.length < 2) {
+      this.suggestions = [];
+      return;
+    }
+  
+    if (this.suggestTimer) window.clearTimeout(this.suggestTimer);
+    this.suggestTimer = window.setTimeout(() => {
+      this.fetchSuggestions(typed).catch(() => {
+        this.suggestions = [];
+      });
+    }, 450);
   }
 
   async onSearch() {
@@ -116,6 +134,8 @@ export class HomePage {
   }
 
   private async performSearch(q: string) {
+    if (this.suggestTimer) window.clearTimeout(this.suggestTimer);
+    this.suggestions = [];
     this.showRecentSearchDropdown = false;
 
     this.isLoading = true;
@@ -143,6 +163,18 @@ export class HomePage {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  private async fetchSuggestions(q: string) {
+    const typed = q.trim();
+    if (typed.length < 2) {
+      this.suggestions = [];
+      return;
+    }
+  
+    const results = await this.tmdb.searchMoviesAutocomplete(typed);
+    console.log('[autocomplete] results length:', results.length);
+    this.suggestions = results.slice(0, 5); // top 5
   }
 
   async backToTrending() {
@@ -174,6 +206,19 @@ export class HomePage {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  suggestions: MovieDisplay[] = [];
+  private suggestTimer?: number;
+
+  truncate(text: string, max = 80): string {
+    const t = (text ?? '').trim();
+    if (!t) return '';
+    if (t.length <= max) return t;
+  
+    const sliced = t.slice(0, max);
+    const rtrimmed = sliced.replace(/\s+$/, ''); // remove trailing whitespace
+    return rtrimmed + '…';
   }
 
   async clearSearchHistory() {

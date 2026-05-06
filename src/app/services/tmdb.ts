@@ -112,6 +112,35 @@ export class TmdbService {
   
     return mapped;
   }
+  async searchMoviesAutocomplete(query: string): Promise<MovieDisplay[]> {
+    const normalized = this.normalizeQuery(query);
+    const cacheKey = `autocomplete:${normalized}`;
+    console.log('[autocomplete] TMDB method query:', query, 'cacheKey:', cacheKey);
+  
+    const cached = await this.appDb.getCached<MovieDisplay[]>(cacheKey);
+    if (cached) {
+      console.log('[autocomplete] cache hit ✅ length:', cached.length);
+      return cached;
+    }
+  
+    console.log('[autocomplete] cache miss → calling API');
+  
+    const url =
+      `${this.baseUrl}/search/movie?query=${encodeURIComponent(query)}&api_key=${this.apiKey}`;
+    const data: any = await this.getJson<any>(url);
+  
+    const mapped = (data?.results ?? []).map((m: any) => ({
+      id: m.id,
+      title: m.title ?? '',
+      overview: m.overview ?? '',
+      poster_path: m.poster_path ?? null,
+    }));
+  
+    await this.appDb.setCached(cacheKey, mapped, this.TTL_MS);
+  
+    // IMPORTANT: do NOT call addSearchQuery() here (avoids spamming search history)
+    return mapped;
+  }
   
   // Movie Details: cast/crew [brief]
   async getMovieCredits(movieId: number): Promise<MovieCredits> {
