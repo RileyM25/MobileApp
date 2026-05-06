@@ -29,23 +29,54 @@
     <ion-button (click)="onSearch()">Search</ion-button>
   
     <div
-      class="recent-dropdown"
-      *ngIf="showRecentSearchDropdown &&
-        filteredRecentSearches.length > 0"
+  class="recent-dropdown"
+  *ngIf="showRecentSearchDropdown && (filteredRecentSearches.length > 0 || recentSearches.length === 0)"
+>
+  <div class="recent-title">Recent Searches</div>
+
+  <!-- Clear button -->
+  <ion-button
+    fill="clear"
+    size="small"
+    (click)="clearSearchHistory()"
+    [disabled]="recentSearches.length === 0"
+  >
+    Clear search history
+  </ion-button>
+
+  <!-- No recent searches message -->
+  <div *ngIf="recentSearches.length === 0" class="ion-padding">
+    No recent searches.
+  </div>
+
+  <!-- List when available -->
+  <ion-list *ngIf="filteredRecentSearches.length > 0">
+    <ion-item
+      button
+      *ngFor="let q of filteredRecentSearches"
+      (click)="useSearchSuggestion(q)"
     >
-      <div class="recent-title">Recent Searches</div>
-  
-      <ion-list>
-        <ion-item
-          button
-          *ngFor="let q of filteredRecentSearches"
-          (click)="useSearchSuggestion(q)"
-        >
-          {{ q }}
-        </ion-item>
-      </ion-list>
-    </div>
+      {{ q }}
+    </ion-item>
+  </ion-list>
+</div>
   </ion-item>
+
+  <h2 class="ion-margin-top" *ngIf="!showingSearchResults && recentMovies.length > 0">
+    Recently viewed
+  </h2>
+  
+  <ion-list *ngIf="!showingSearchResults && recentMovies.length > 0 && !isLoading">
+    <ion-item button *ngFor="let m of recentMovies" (click)="openMovie(m.id)">
+      <ion-thumbnail slot="start">
+        <img *ngIf="posterUrl(m.poster_path)" [src]="posterUrl(m.poster_path)" />
+      </ion-thumbnail>
+      <ion-label>
+        <h3>{{ m.title }}</h3>
+        <p>{{ m.overview }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
 
   <h2 class="ion-margin-top" *ngIf="!showingSearchResults">
     Today&apos;s Trending Movies

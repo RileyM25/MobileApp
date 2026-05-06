@@ -24,14 +24,19 @@ interface AppDB extends DBSchema {
     key: string; // normalized query key
     value: SearchHistoryEntry;
   };
+  recentMovies: {
+    key: number; // movie id
+    value: MovieDisplay & { viewedAt: number };
+  };
 }
 
 @Injectable({ providedIn: 'root' })
 export class AppDb {
-  private dbPromise = openDB<AppDB>('movie-app-db', 1, {
+  private dbPromise = openDB<AppDB>('movie-app-db', 2, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('tmdbCache')) db.createObjectStore('tmdbCache');
       if (!db.objectStoreNames.contains('searchHistory')) db.createObjectStore('searchHistory');
+      if (!db.objectStoreNames.contains('recentMovies')) {db.createObjectStore('recentMovies');}
     },
   });
 
@@ -80,5 +85,33 @@ export class AppDb {
     const all = await db.getAll('searchHistory');
     all.sort((a, b) => b.searchedAt - a.searchedAt);
     return all.slice(0, limit).map((x) => x.query);
+  }
+
+  async clearSearchHistory(): Promise<void> {
+    const db = await this.dbPromise;
+    await db.clear('searchHistory');
+  }
+
+  async addRecentMovie(movie: MovieDisplay): Promise<void> {
+    const db = await this.dbPromise;
+    await db.put('recentMovies', { ...movie, viewedAt: Date.now() }, movie.id);
+  
+    // Optional prune to keep only last 10
+    const all = await db.getAll('recentMovies');
+    all.sort((a, b) => b.viewedAt - a.viewedAt);
+    const keep = all.slice(0, 10);
+    const keepIds = new Set(keep.map((x) => x.id));
+    await Promise.all(
+      all.map(async (x) => {
+        if (!keepIds.has(x.id)) await db.delete('recentMovies', x.id);
+      })
+    );
+  }
+  
+  async getRecentMovies(limit = 10): Promise<MovieDisplay[]> {
+    const db = await this.dbPromise;
+    const all = await db.getAll('recentMovies');
+    all.sort((a, b) => b.viewedAt - a.viewedAt);
+    return all.slice(0, limit).map(({ viewedAt, ...rest }) => rest as MovieDisplay);
   }
 }

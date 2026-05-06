@@ -36,6 +36,8 @@ export class HomePage {
   isLoading = false;
   errorMsg = '';
 
+  recentMovies: MovieDisplay[] = [];
+
   // Header mode (used by your HTML)
   showingSearchResults = false;
   lastSearchQuery = '';
@@ -58,6 +60,8 @@ export class HomePage {
   async ionViewWillEnter() {
     await this.loadTrending();
     this.recentSearches = await this.appDb.getSearchHistory(10);
+    
+    this.recentMovies = await this.appDb.getRecentMovies(10);
 
     // keep dropdown closed until focus/typing
     this.filteredRecentSearches = this.recentSearches.slice(0, 8); 
@@ -131,7 +135,7 @@ export class HomePage {
       this.searchQuery = '';
 
       // requirement: dropdown should show again when input is empty
-      this.showRecentSearchDropdown = true;
+      this.showRecentSearchDropdown = false;
       this.updateFilteredRecentSearches();
     } catch {
       this.errorMsg = 'Search failed.';
@@ -150,9 +154,10 @@ export class HomePage {
 
     await this.loadTrending();
     this.recentSearches = await this.appDb.getSearchHistory(10);
+    this.recentMovies = await this.appDb.getRecentMovies(10);
 
     // input is empty, so show dropdown
-    this.showRecentSearchDropdown = true;
+    this.showRecentSearchDropdown = false;
     this.updateFilteredRecentSearches();
   }
 
@@ -169,6 +174,13 @@ export class HomePage {
     } finally {
       this.isLoading = false;
     }
+  }
+
+  async clearSearchHistory() {
+    await this.appDb.clearSearchHistory();
+    this.recentSearches = [];
+    this.filteredRecentSearches = [];
+    this.showRecentSearchDropdown = false;
   }
 
   openMovie(movieId: number) {

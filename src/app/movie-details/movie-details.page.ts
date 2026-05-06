@@ -12,6 +12,7 @@ import {
 
 import { TmdbService, CastCrewMember } from '../services/tmdb';
 import { FavoritesDb } from '../services/favourites-db';
+import { AppDb } from '../services/app-db';
 
 @Component({
   selector: 'app-movie-details',
@@ -42,7 +43,8 @@ export class MovieDetailsPage {
     private route: ActivatedRoute,
     private favouritesDb: FavoritesDb,
     public tmdb: TmdbService,
-    private router: Router
+    private router: Router,
+    private appDb: AppDb
   ) {}
 
   async ionViewWillEnter() {
@@ -61,6 +63,13 @@ export class MovieDetailsPage {
       // overview: simplest is to keep it from a movie endpoint 
       const overview = await this.tmdb.getMovieOverview(this.movieId);
       this.overview = overview.overview ?? '';
+
+      await this.appDb.addRecentMovie({
+        id: overview.id,
+        title: overview.title ?? '',
+        overview: overview.overview ?? '',
+        poster_path: overview.poster_path ?? null,
+      });
 
       // fav state
       this.isFavourite = await this.favouritesDb.isFavourite(this.movieId);

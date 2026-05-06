@@ -51,6 +51,9 @@
   /* prevent it from “shrinking” */
   display: block;
 }
+.recent-dropdown ion-button {
+  margin: 0 8px 4px;
+}
 
 /* optional: title + list spacing */
 .recent-title {
