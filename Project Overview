@@ -1,0 +1,401 @@
+###   
+ 
+**1) Introduction**
+
+Hi, my project is a Movie App built with **Ionic (Angular standalone)** and using **TMDB** for data. It also uses **IndexedDB** for persistence.  
+The app implements the required features: Trending + Search on Home, Movie Details (overview + cast/crew), Person Details (biography + dates + other movies), and a persistent Favourites list.  
+Beyond the base requirements, I implemented **innovations**: TTL caching, search history dropdown, autocomplete suggestions, recently viewed movies, and a favourites insights dashboard.”
+
+* * *
+
+**2) Baseline functionality**
+
+Navigation is split into pages:
+
+*   **HomePage** for trending and search
+*   **MovieDetailsPage** for overview + cast/crew and add/remove favourites
+*   **PersonDetailsPage** for personal info and other movies
+*   **FavouritesPage** for persisted favourites
+
+TMDB integration is handled in **TmdbService**, and favourites persist using **FavoritesDb** in IndexedDB.”
+
+* * *
+
+**3) Innovations**
+
+**Innovation 1 — TTL caching with IndexedDB (caching with expiration)**
+
+I implemented **TTL caching** to reduce repeated calls to TMDB. The app stores results in IndexedDB along with an expiration time, and returns cached data as long as it hasn’t expired.
+
+**Where in code**
+
+*   Cache engine: **src/app/services/app-db.ts**
+*   Cache usage: **src/app/services/tmdb.ts**
+
+I also use different cache keys like trending, search results, movie credits, and person details so the cache stays consistent and reusable.
+
+* * *
+
+**Innovation 2 — Search history dropdown + clear**
+
+I store successful search queries in IndexedDB and show them as a dropdown under the search box. I also added a clear option to reset history.
+
+**Where in code**
+
+*   Store/query history in **src/app/services/app-db.ts**
+*   Save history via **TmdbService.searchMovies()**
+*   UI dropdown in **src/app/home/home.page.ts/html**
+
+* * *
+
+**Innovation 3 — Autocomplete suggestions (2+ chars, debounced, combined dropdown)**
+
+I added autocomplete suggestions while typing. Suggestions appear only after **2+ characters** and I debounce the input (~450ms) to avoid spamming TMDB. Suggestions are merged into the **same dropdown** as recent searches.
+
+**Where in code**
+
+*   Autocomplete API method: **src/app/services/tmdb.ts** → **searchMoviesAutocomplete()**
+*   Debounce + fetch: **src/app/home/home.page.ts** → **onSearchInput()**, **fetchSuggestions()**
+*   Rendering: dropdown sections in **home.page.html**
+
+* * *
+
+**Innovation 4 — Recently viewed movies (Home-only, when trending view active)**
+
+I track movies opened from Movie Details. Recently viewed is saved **only after Movie Details successfully loads the movie overview**.  
+On Home, I show Recently viewed **only when the user is in Trending mode**, not while in search-results mode.
+
+**Where in code**
+
+*   DB store + retrieval in **src/app/services/app-db.ts**
+*   Save in **src/app/movie-details/movie-details.page.ts**
+*   Display on Home: **src/app/home/home.page.html** + **home.page.ts**
+
+* * *
+
+**Innovation 5 — Favourites Insights dashboard (filter/sort/count/clear)**
+
+Finally, I improved the Favourites page with an insights dashboard. It supports:
+
+*   displaying the favourites count
+*   filtering by title
+*   sorting A–Z / Z–A
+*   clearing all favourites with confirmation  
+    All favourites still remain persisted through the existing IndexedDB favourites logic.”
+
+**Where in code**
+
+*   **src/app/favourites/favourites.page.ts/html**
+*   Driven by: **applySortFilter()**, **setSort()**, **clearFavourites()** etc.
+
+* * *
+
+**Conclusion**
+
+Overall, the app improves performance via caching, improves usability via search history and autocomplete, adds personalization via recently viewed, and improves favourites management via the insights dashboard — all while meeting the required functionality.”
+
+**Code snippets to point to while speaking**
+
+**A) TTL caching engine — src/app/services/app-db.ts**
+
+**getCached() / setCached()**
+
+async getCached<T>(key: string): Promise<T | null> {
+
+  const db = await this.dbPromise;
+
+  const entry = await db.get('tmdbCache', key);
+
+  if (!entry) return null;
+
+  if (Date.now() > entry.expiresAt) return null;
+
+  return entry.data as T;
+
+}
+
+async setCached<T>(key: string, data: T, ttlMs: number): Promise<void> {
+
+  const db = await this.dbPromise;
+
+  await db.put('tmdbCache', { expiresAt: Date.now() + ttlMs, data } as any, key);
+
+}
+
+**Search history (query strings only)**
+
+async addSearchQuery(query: string, limit = 10): Promise<void> { /\* ... \*/ }
+
+async getSearchHistory(limit = 10): Promise<string\[\]> { /\* ... \*/ }
+
+async clearSearchHistory(): Promise<void> { /\* ... \*/ }
+
+**Recently viewed movies**
+
+async addRecentMovie(movie: MovieDisplay): Promise<void> { /\* ... \*/ }
+
+async getRecentMovies(limit = 10): Promise<MovieDisplay\[\]> { /\* ... \*/ }
+
+**B) TMDB service — src/app/services/tmdb.ts**
+
+**1) Caching for Trending**
+
+async getTrendingToday(): Promise<MovieDisplay\[\]> {
+
+  const cacheKey = 'trending:day';
+
+  const cached = await this.appDb.getCached<MovieDisplay\[\]>(cacheKey);
+
+  if (cached) return cached;
+
+  // fetch + map
+
+  await this.appDb.setCached(cacheKey, mapped, this.TTL\_MS);
+
+  return mapped;
+
+}
+
+**2) Search results + history write**
+
+async searchMovies(query: string): Promise<MovieDisplay\[\]> {
+
+  const normalized = this.normalizeQuery(query);
+
+  const cacheKey = \`search:${normalized}\`;
+
+  const cached = await this.appDb.getCached<MovieDisplay\[\]>(cacheKey);
+
+  if (cached) {
+
+    await this.appDb.addSearchQuery(query, 10);
+
+    return cached;
+
+  }
+
+  // fetch + map
+
+  await this.appDb.setCached(cacheKey, mapped, this.TTL\_MS);
+
+  await this.appDb.addSearchQuery(query, 10);
+
+  return mapped;
+
+}
+
+**3) Autocomplete (TTL cached, does NOT add search history)**
+
+async searchMoviesAutocomplete(query: string): Promise<MovieDisplay\[\]> {
+
+  const normalized = this.normalizeQuery(query);
+
+  const cacheKey = \`autocomplete:${normalized}\`;
+
+  const cached = await this.appDb.getCached<MovieDisplay\[\]>(cacheKey);
+
+  if (cached) return cached;
+
+  // fetch + map
+
+  await this.appDb.setCached(cacheKey, mapped, this.TTL\_MS);
+
+  return mapped;
+
+}
+
+**C) Home autocomplete + dropdown — src/app/home/home.page.ts**
+
+**Debounced autocomplete fetch**
+
+onSearchInput() {
+
+  this.showRecentSearchDropdown = true;
+
+  this.updateFilteredRecentSearches();
+
+  const typed = this.searchQuery.trim();
+
+  if (typed.length < 2) {
+
+    this.suggestions = \[\];
+
+    return;
+
+  }
+
+  if (this.suggestTimer) window.clearTimeout(this.suggestTimer);
+
+  this.suggestTimer = window.setTimeout(() => {
+
+    this.fetchSuggestions(typed).catch(() => {
+
+      this.suggestions = \[\];
+
+    });
+
+  }, 450);
+
+}
+
+**Fetch suggestions (top 5)**
+
+private async fetchSuggestions(q: string) {
+
+  const typed = q.trim();
+
+  if (typed.length < 2) {
+
+    this.suggestions = \[\];
+
+    return;
+
+  }
+
+  const results = await this.tmdb.searchMoviesAutocomplete(typed);
+
+  this.suggestions = results.slice(0, 5);
+
+}
+
+**Clear search history button handler**
+
+async clearSearchHistory() {
+
+  await this.appDb.clearSearchHistory();
+
+  this.recentSearches = \[\];
+
+  this.filteredRecentSearches = \[\];
+
+  this.showRecentSearchDropdown = false;
+
+}
+
+**Recent search filtering**
+
+private updateFilteredRecentSearches() {
+
+  const typed = this.searchQuery.trim().toLowerCase();
+
+  if (!typed) {
+
+    this.filteredRecentSearches = this.recentSearches.slice(0, 8);
+
+    return;
+
+  }
+
+  this.filteredRecentSearches = this.recentSearches
+
+    .filter((q) => q.toLowerCase().includes(typed))
+
+    .slice(0, 8);
+
+}
+
+**D) Recently viewed save — src/app/movie-details/movie-details.page.ts**
+
+This is the key line that makes innovation 4 work:
+
+await this.appDb.addRecentMovie({
+
+  id: overview.id,
+
+  title: overview.title ?? '',
+
+  overview: overview.overview ?? '',
+
+  poster\_path: overview.poster\_path ?? null,
+
+});
+
+**E) Favourites Insights dashboard — src/app/favourites/favourites.page.ts**
+
+(These are the functions you should point to while speaking.)
+
+**Load + apply filter/sort**
+
+async ionViewWillEnter() {
+
+  this.favouritesAll = await this.favouritesDb.getAllFavourites();
+
+  this.applySortFilter();
+
+}
+
+**Sorting/filtering logic**
+
+applySortFilter() {
+
+  const text = this.filterText.trim().toLowerCase();
+
+  let list = this.favouritesAll;
+
+  if (text) {
+
+    list = list.filter((m) => (m.title ?? '').toLowerCase().includes(text));
+
+  }
+
+  list = \[...list\].sort((a, b) => {
+
+    const at = (a.title ?? '').toLowerCase();
+
+    const bt = (b.title ?? '').toLowerCase();
+
+    if (at < bt) return this.sortMode === 'title-asc' ? -1 : 1;
+
+    if (at > bt) return this.sortMode === 'title-asc' ? 1 : -1;
+
+    return 0;
+
+  });
+
+  this.favourites = list;
+
+}
+
+**Sort + filter events**
+
+onFilterInput() {
+
+  this.applySortFilter();
+
+}
+
+setSort(mode: 'title-asc' | 'title-desc') {
+
+  this.sortMode = mode;
+
+  this.applySortFilter();
+
+}
+
+**Clear all favourites (IndexedDB delete loop)**
+
+async clearFavourites() {
+
+  const ok = confirm('Clear all favourites? This cannot be undone.');
+
+  if (!ok) return;
+
+  await Promise.all(this.favouritesAll.map((m) => this.favouritesDb.removeFavourite(m.id)));
+
+  this.favouritesAll = \[\];
+
+  this.favourites = \[\];
+
+  this.filterText = '';
+
+  this.sortMode = 'title-asc';
+
+}
+
+**Count (shown in UI)**
+
+get favouritesCount() {
+
+  return this.favouritesAll.length;
+
+}
